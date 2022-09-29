@@ -10,10 +10,12 @@ from utils.getCameraParam import *
 '''
 must use 'COLOR_BGR2GRAY' here, or you will get a different gray-value with what MATLAB gets.
 '''
-def getImage(root='demo'):
-    D = cv2.imread(os.path.join(root, '0.png'), cv2.COLOR_BGR2GRAY)/10000
-    RD = cv2.imread(os.path.join(root, '0_raw.png'), cv2.COLOR_BGR2GRAY)/10000
-    return D, RD
+def getDepth(root='demo', file='0.png'):
+    # D = cv2.imread(os.path.join(root, file), cv2.COLOR_BGR2GRAY)/10000
+    D = cv2.imread(os.path.join(root, file), -1)/1000
+    # RD = cv2.imread(os.path.join(root, '0_raw.png'), cv2.COLOR_BGR2GRAY)/10000
+    # return D, RD
+    return D, D
 
 
 '''
@@ -60,29 +62,33 @@ def getHHA(C, D, RD):
     return HHA
 
 if __name__ == "__main__":
-    D, RD = getImage()
-    camera_matrix = getCameraParam('color')
-    print('max gray value: ', np.max(D))        # make sure that the image is in 'meter'
-    hha = getHHA(camera_matrix, D, RD)
-    hha_complete = getHHA(camera_matrix, D, D)
-    cv2.imwrite('demo/hha.png', hha)
-    cv2.imwrite('demo/hha_complete.png', hha_complete)
-    
+    root = "/mnt/hdd/xifan/data/nyuv2-python-toolkit/NYUv2/"
+    dep_dir = os.path.join(root, 'depth', 'test')
+    out_dir = os.path.join(root, 'hha', 'test')
+    dep_list = os.listdir(dep_dir)
     
     ''' multi-peocessing example '''
-    '''
+    
     from multiprocessing import Pool
     
     def generate_hha(i):
         # generate hha for the i-th image
-        return
+        name=dep_list[i].split('.')[0]
+        D, RD = getDepth(root=dep_dir, file=dep_list[i])
+        camera_matrix = getCameraParam('color')
+        print('max gray value: ', np.max(D))        # make sure that the image is in 'meter'
+        hha = getHHA(camera_matrix, D, RD)
+        # hha_complete = getHHA(camera_matrix, D, D)
+        cv2.imwrite(os.path.join(out_dir, name + '_hha.png'), hha)
+        # cv2.imwrite('demo/hha_complete.png', hha_complete)
     
-    processNum = 16
-    pool = Pool(processNum)
+    # processNum = 16
+    # pool = Pool(processNum)
 
-    for i in range(img_num):
+    for i in range(len(dep_list)):
         print(i)
-        pool.apply_async(generate_hha, args=(i,))
-        pool.close()
-        pool.join()
-    ''' 
+        generate_hha(i)
+        # pool.apply_async(generate_hha, args=(i,))
+        # pool.close()
+        # pool.join()
+    
